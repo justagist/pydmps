@@ -154,11 +154,17 @@ class DMPs(object):
         self.reset_state()
         return y_des
 
-    def rollout(self, timesteps=None, **kwargs):
+    def rollout(self, timesteps=None, custom_start = None, **kwargs):
         """Generate a system trial, no feedback is incorporated."""
 
         self.reset_state()
 
+        if custom_start is not None:
+            self.y = np.asarray(custom_start).copy()
+
+        assert (self.y.shape == self.dy.shape, "Dimensions of custom goal \
+            provided does not match the dimensions of the DMP")
+        
         if timesteps is None:
             if "tau" in kwargs:
                 timesteps = int(self.timesteps / kwargs["tau"])
