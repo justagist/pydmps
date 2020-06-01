@@ -6,7 +6,6 @@ from pydmps.dmp_discrete import DMPs_discrete as dmp_discrete
 
 from utils import MouseTracker
 
-
 def plot_traj(trajectories):
     plt.figure("trajectories")
     
@@ -50,7 +49,8 @@ def plot_path(trajectory, true_points, custom_start = None, custom_goal = None):
     resultant_vel = np.sqrt(vel_square[:,0]+vel_square[:,1])*1000
 
     skip_step = int(0.01*pos_trajectory.shape[0]) # ----- steps to skip so that plot update is not too slow
-    stop = False
+
+    
     while i < (pos_trajectory.shape[0]):
         try:
             plt.plot(pos_trajectory[:i,0],pos_trajectory[:i,1], label = "New path", color = 'b')
@@ -58,34 +58,25 @@ def plot_path(trajectory, true_points, custom_start = None, custom_goal = None):
             pause = 0.001/resultant_vel[i] if resultant_vel[i] > 0.01 else 0.001/0.01
             plt.pause(pause)
             plt.draw()
-
-            if i < 1:
+            if i == 0:
                 plt.legend()
 
             i += skip_step
 
         except KeyboardInterrupt:
-            stop = True
             break
 
 def train_dmp(trajectory):
-    # discrete_dmp_config['dof'] = 2
     dmp = dmp_discrete(n_dmps=2, n_bfs=500, ay=np.ones(2)*100.0)
-    y_track = []
-    dy_track = []
-    ddy_track = []
     dmp.imitate_path(y_des=trajectory, plot=False)
 
     return dmp
 
 def test_dmp(dmp, custom_start = None, custom_goal = None):
     
-    if custom_start is not None:
-        dmp.y = custom_start
     if custom_goal is not None:
         dmp.goal = custom_goal
-
-    y_track, dy_track, ddy_track = dmp.rollout(tau = 1)
+    y_track, dy_track, ddy_track = dmp.rollout(tau = 1, custom_start = custom_start)
 
     test_traj = {
     'pos_traj': y_track,
@@ -107,20 +98,15 @@ if __name__ == '__main__':
     # ----- get custom start and end points for the dmp using mouse clicks
     print "\nClick custom start and end points"
     strt_end = mt.get_mouse_click_coords(num_clicks = 2, inverted = True, keep_window_alive = True, verbose = False)
-    # strt_end = None
-
-    # print (trajectory)
-    # print (strt_end)
-
+    
     if trajectory is not None:
         dmp = train_dmp(trajectory.T)
 
-
         # ----- the trajectory after modifying the start and goal, speed etc.
-        test_traj = test_dmp(dmp, custom_start = strt_end[0,:] if strt_end is not None else None, custom_goal = strt_end[1,:] if strt_end is not None else None)
+        test_traj = test_dmp(dmp, custom_start = strt_end[0,:], custom_goal = strt_end[1,:])
 
         # ----- plotting the 2d paths (actual and modified)
-        plot_path(test_traj, trajectory, custom_start = strt_end[0,:] if strt_end is not None else None, custom_goal = strt_end[1,:] if strt_end is not None else None)
+        plot_path(test_traj, trajectory, custom_start = strt_end[0,:], custom_goal = strt_end[1,:])
 
     else:
         print "No data in trajectory!\n"
