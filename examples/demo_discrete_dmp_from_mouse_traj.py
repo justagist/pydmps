@@ -70,7 +70,7 @@ def plot_path(trajectory, true_points, custom_start = None, custom_goal = None):
 
 def train_dmp(trajectory):
     # discrete_dmp_config['dof'] = 2
-    dmp = dmp_discrete(n_dmps=2, n_bfs=1000, ay=np.ones(2)*20.0)
+    dmp = dmp_discrete(n_dmps=2, n_bfs=500, ay=np.ones(2)*100.0)
     y_track = []
     dy_track = []
     ddy_track = []
@@ -78,14 +78,14 @@ def train_dmp(trajectory):
 
     return dmp
 
-def test_dmp(dmp, speed=1., plot_trained=False, custom_start = None, custom_goal = None):
+def test_dmp(dmp, custom_start = None, custom_goal = None):
     
     if custom_start is not None:
         dmp.y = custom_start
     if custom_goal is not None:
         dmp.goal = custom_goal
 
-    y_track, dy_track, ddy_track = dmp.rollout()
+    y_track, dy_track, ddy_track = dmp.rollout(tau = 1)
 
     test_traj = {
     'pos_traj': y_track,
@@ -98,22 +98,26 @@ def test_dmp(dmp, speed=1., plot_trained=False, custom_start = None, custom_goal
 
 if __name__ == '__main__':
 
-    mt = MouseTracker(window_dim = [600, 400])
+    mt = MouseTracker(window_dim = [1000, 1000])
 
     # ----- record trajectory using mouse
     print "\nDraw trajectory ... "
-    trajectory = mt.record_mousehold_path(record_interval = 0.01, close_on_mousebutton_up = True, verbose = False, inverted = True, keep_window_alive = True)
+    trajectory = mt.record_mousehold_path(record_interval = 0.001, close_on_mousebutton_up = True, verbose = False, inverted = True, keep_window_alive = True)
 
     # ----- get custom start and end points for the dmp using mouse clicks
     print "\nClick custom start and end points"
     strt_end = mt.get_mouse_click_coords(num_clicks = 2, inverted = True, keep_window_alive = True, verbose = False)
+    # strt_end = None
+
+    # print (trajectory)
+    # print (strt_end)
 
     if trajectory is not None:
         dmp = train_dmp(trajectory.T)
 
 
         # ----- the trajectory after modifying the start and goal, speed etc.
-        test_traj = test_dmp(dmp, speed=1.,plot_trained=False, custom_start = strt_end[0,:] if strt_end is not None else None, custom_goal = strt_end[1,:] if strt_end is not None else None)
+        test_traj = test_dmp(dmp, custom_start = strt_end[0,:] if strt_end is not None else None, custom_goal = strt_end[1,:] if strt_end is not None else None)
 
         # ----- plotting the 2d paths (actual and modified)
         plot_path(test_traj, trajectory, custom_start = strt_end[0,:] if strt_end is not None else None, custom_goal = strt_end[1,:] if strt_end is not None else None)
